@@ -24,6 +24,7 @@ from lnn_model import LNNPredictor, LNNTrainer
 
 
 # 配置日志
+Path('logs').mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
