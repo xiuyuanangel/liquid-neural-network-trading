@@ -123,12 +123,13 @@ class HuobiAPI:
         """
         all_data = []
         
-        # 将datetime转换为秒级时间戳（API要求10位时间戳）
-        start_ts = int(start_time.timestamp())
-        end_ts = int(end_time.timestamp())
-        
         # 根据周期确定时间间隔（秒）
         period_seconds = self._get_period_seconds(period)
+        
+        # 将datetime转换为秒级时间戳（API要求10位时间戳）
+        # 对齐到周期边界（API要求from/to为K线周期的整数倍）
+        start_ts = (int(start_time.timestamp()) // period_seconds) * period_seconds
+        end_ts = (int(end_time.timestamp()) // period_seconds) * period_seconds
         
         current_to = end_ts
         
