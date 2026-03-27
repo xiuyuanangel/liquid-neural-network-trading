@@ -211,7 +211,7 @@ class KlineProcessor:
             raise ValueError(f"没有可用的特征列。可用列: {df.columns.tolist()}")
         
         # 填充缺失值
-        df = df.fillna(method='ffill').fillna(method='bfill').fillna(0)
+        df = df.ffill().bfill().fillna(0)
         
         X = []
         y = []
