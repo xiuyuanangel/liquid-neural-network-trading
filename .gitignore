@@ -61,3 +61,6 @@ htmlcov/
 
 # MyPy
 .mypy_cache/
+test_api.py
+.gitignore
+.gitignore
