@@ -6,18 +6,20 @@ on:
   pull_request:
     branches: [ main, master ]
   schedule:
-    # 每天UTC时间00:00运行一次
     - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       symbol:
-        description: '交易对 (例如: BTC-USDT)'
+        description: 'Trading Pair (e.g. BTC-USDT)'
         required: false
         default: 'BTC-USDT'
       days:
-        description: '训练数据天数'
+        description: 'Training data days'
         required: false
         default: '60'
+
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   test:
@@ -61,7 +63,12 @@ jobs:
   train-model:
     runs-on: ubuntu-latest
     needs: test
-    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    # 在 push 到 main/master 分支、定时任务或手动触发时运行
+    if: |
+      always() && 
+      (github.event_name == 'schedule' || 
+       github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')))
 
     steps:
     - uses: actions/checkout@v4
@@ -109,6 +116,7 @@ jobs:
   predict:
     runs-on: ubuntu-latest
     needs: train-model
+    # 只在手动触发时运行预测任务
     if: github.event_name == 'workflow_dispatch'
 
     steps:
