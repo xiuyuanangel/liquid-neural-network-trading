@@ -127,20 +127,26 @@ class HuobiAPI:
         period_seconds = self._get_period_seconds(period)
         
         # 将datetime转换为秒级时间戳（API要求10位时间戳）
-        # 对齐到周期边界（API要求from/to为K线周期的整数倍）
-        start_ts = (int(start_time.timestamp()) // period_seconds) * period_seconds
-        end_ts = (int(end_time.timestamp()) // period_seconds) * period_seconds
+        start_ts = int(start_time.timestamp())
+        end_ts = int(end_time.timestamp())
+        
+        # API使用from/to时不填size，有最大返回条数限制（默认150条）
+        # 超过此限制会报 "invalid from to"，因此每段查询范围不超过 150 * period_seconds
+        max_candles_per_request = 1500
+        max_range = max_candles_per_request * period_seconds
         
         current_to = end_ts
         
         while current_to > start_ts:
             try:
+                # 限制from/to范围，避免超出API最大返回条数
+                from_ts = max(start_ts, current_to - max_range)
+                
                 # 使用from/to参数获取数据
-                # API会返回[from, to]范围内的数据，最多2000条
                 data = self.get_kline_data(
                     symbol=symbol,
                     period=period,
-                    from_time=start_ts,
+                    from_time=from_ts,
                     to_time=current_to
                 )
                 
