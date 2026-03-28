@@ -189,7 +189,8 @@ class KlineProcessor:
     def create_training_samples(
         self,
         df: pd.DataFrame,
-        feature_columns: List[str] = None
+        feature_columns: List[str] = None,
+        stride: int = 10
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         创建训练样本
@@ -222,8 +223,8 @@ class KlineProcessor:
         if len(df) < total_needed:
             raise ValueError(f"数据点不足。需要 {total_needed}，实际 {len(df)}")
         
-        # 滑动窗口创建样本
-        for i in range(len(df) - total_needed + 1):
+        # 滑动窗口创建样本（stride控制步长，减少样本数降低内存）
+        for i in range(0, len(df) - total_needed + 1, stride):
             # 输入窗口
             window_data = df.iloc[i:i + self.window_size][available_cols].values
             
@@ -282,17 +283,10 @@ class KlineProcessor:
 
 
 class TradingDataset(Dataset):
-    """交易数据集"""
+    """交易数据集（使用float16降低内存占用）"""
     
     def __init__(self, X: np.ndarray, y: np.ndarray):
-        """
-        初始化数据集
-        
-        Args:
-            X: 输入数据
-            y: 标签
-        """
-        self.X = torch.FloatTensor(X)
+        self.X = torch.from_numpy(X).half()
         self.y = torch.LongTensor(y)
     
     def __len__(self) -> int:

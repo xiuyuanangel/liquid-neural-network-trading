@@ -99,6 +99,7 @@ jobs:
         python src/main.py \
           --symbol ${{ github.event.inputs.symbol || 'BTC-USDT' }} \
           --days ${{ github.event.inputs.days || '60' }} \
+          --batch-size 2 \
           --mode train
 
     - name: Upload model artifacts

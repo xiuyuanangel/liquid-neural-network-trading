@@ -261,7 +261,7 @@ class LNNPredictor(nn.Module):
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        前向传播
+        前向传播（逐时间步处理，降低内存占用）
         
         Args:
             x: 输入 [batch_size, seq_length, input_features]
@@ -271,16 +271,30 @@ class LNNPredictor(nn.Module):
         """
         batch_size, seq_len, features = x.shape
         
-        # 特征提取
-        x_flat = x.view(-1, features)
-        features_extracted = self.feature_extractor(x_flat)
-        features_extracted = features_extracted.view(batch_size, seq_len, -1)
+        # 初始化隐藏状态
+        hidden = self.lnn.init_hidden(batch_size, x.device)
+        current_hidden = list(hidden)
         
-        # LNN处理
-        lnn_out, _ = self.lnn(features_extracted)
+        # 逐时间步处理，避免对整个序列一次性做特征提取
+        for t in range(seq_len):
+            x_t = x[:, t, :]  # [batch, features]
+            
+            # 逐时间步特征提取
+            feat = self.feature_extractor(x_t)  # [batch, hidden//2]
+            
+            # 通过每一层液态层
+            for layer_idx, layer in enumerate(self.lnn.liquid_layers):
+                if layer_idx == 0:
+                    layer_input = feat
+                else:
+                    layer_input = current_hidden[layer_idx - 1]
+                current_hidden[layer_idx] = layer(layer_input, current_hidden[layer_idx])
+        
+        # 使用最后一层的最终隐藏状态
+        final_hidden = self.lnn.dropout(current_hidden[-1])
         
         # 分类
-        logits = self.classifier(lnn_out)
+        logits = self.classifier(final_hidden)
         
         return logits
     
