@@ -288,12 +288,12 @@ class TradingDataset(Dataset):
     def __init__(self, X: np.ndarray, y: np.ndarray):
         self.X = torch.from_numpy(X).half()
         self.y = torch.LongTensor(y)
-    
+
     def __len__(self) -> int:
         return len(self.X)
-    
+
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        return self.X[idx], self.y[idx]
+        return self.X[idx].float(), self.y[idx]
 
 
 def create_data_loaders(
